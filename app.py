@@ -1,5 +1,8 @@
 import streamlit as st
-from tmdb_utils import fetch_and_store_movies
+from tmdb_utils import fetch_and_store_movies, display_movies
+
+# Pemet de remplir toute la largeur de la page
+st.set_page_config(layout="wide")
 
 # Navigation
 st.sidebar.title("Navigation")
@@ -8,6 +11,8 @@ page = st.sidebar.radio("Choisir une page", ["Accueil", "Importer des films"])
 if page == "Accueil":
     st.title("Bienvenue sur l'application TMDb")
     st.write("Utilisez cette application pour importer et visualiser des films depuis TMDb.")
+
+    display_movies()
     
 elif page == "Importer des films":
     st.title("Importation de films depuis TMDb")

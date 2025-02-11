@@ -67,30 +67,26 @@ def fetch_and_store_movies(limit=1000):
     except requests.RequestException as e:
         st.error(f"Erreur lors de la récupération des films : {e}")
         return None
+
 def display_movies(limit=10):
-    """
-    Sélectionne et affiche les films stockés dans la base de données MongoDB.
-    """
-    st.title("Liste des Films")
-    
-    # Récupérer les films depuis la base de données
-    movies = collection.find().limit(limit)
-    
-    for movie in movies:
-        st.subheader(movie.get("title", "Titre inconnu"))
-        st.text(f"Date de sortie : {movie.get('release_date', 'Non disponible')}")
-        st.text(f"Note moyenne : {movie.get('vote_average', 'Non disponible')}")
-        st.text(f"Nombre de votes : {movie.get('vote_count', 'Non disponible')}")
-        st.text(f"Langue originale : {movie.get('original_language', 'Non disponible')}")
-        st.text(f"Résumé : {movie.get('overview', 'Non disponible')}")
-        
-        # Afficher l'affiche du film si disponible
-        poster_path = movie.get("poster_path")
-        if poster_path:
-            st.image(f"https://image.tmdb.org/t/p/w500{poster_path}", caption=movie.get("title"), use_column_width=True)
-        
-        st.markdown("---")  # Séparateur entre les films
+    st.title("🎬 Liste des Films")
 
-# Utilisation dans une application Streamlit
+    movies = list(collection.find().limit(limit))
 
-display_movies()  # Affiche les films dans l'application Streamlit
+    if not movies:
+        st.warning("Aucun film trouvé dans la base de données.")
+        return
+
+    # Organisation des films en 4 colonnes avec espace entre elles
+    cols = st.columns(4, gap="large")  # Ajoute un espace entre les colonnes
+
+    for idx, movie in enumerate(movies):
+        with cols[idx % 4]:  # Répartit les films dans les 4 colonnes
+            with st.container():
+                st.image(f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}", 
+                         caption=movie.get("title", "Titre inconnu"))
+                st.subheader(movie.get("title", "Titre inconnu"))
+                st.write(f"📅 **Sortie :** {movie.get('release_date', 'Non dispo')}")
+                st.write(f"⭐ **Note :** {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)")
+                st.write(f"🌍 **Langue :** {movie.get('original_language', 'Non dispo')}")
+                st.write(f"📝 **Résumé :** {movie.get('overview', 'Pas de résumé')}")

@@ -67,3 +67,30 @@ def fetch_and_store_movies(limit=1000):
     except requests.RequestException as e:
         st.error(f"Erreur lors de la récupération des films : {e}")
         return None
+def display_movies(limit=10):
+    """
+    Sélectionne et affiche les films stockés dans la base de données MongoDB.
+    """
+    st.title("Liste des Films")
+    
+    # Récupérer les films depuis la base de données
+    movies = collection.find().limit(limit)
+    
+    for movie in movies:
+        st.subheader(movie.get("title", "Titre inconnu"))
+        st.text(f"Date de sortie : {movie.get('release_date', 'Non disponible')}")
+        st.text(f"Note moyenne : {movie.get('vote_average', 'Non disponible')}")
+        st.text(f"Nombre de votes : {movie.get('vote_count', 'Non disponible')}")
+        st.text(f"Langue originale : {movie.get('original_language', 'Non disponible')}")
+        st.text(f"Résumé : {movie.get('overview', 'Non disponible')}")
+        
+        # Afficher l'affiche du film si disponible
+        poster_path = movie.get("poster_path")
+        if poster_path:
+            st.image(f"https://image.tmdb.org/t/p/w500{poster_path}", caption=movie.get("title"), use_column_width=True)
+        
+        st.markdown("---")  # Séparateur entre les films
+
+# Utilisation dans une application Streamlit
+
+display_movies()  # Affiche les films dans l'application Streamlit

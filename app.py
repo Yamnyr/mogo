@@ -1,7 +1,7 @@
 from stats_utils import plot_statistics
 import streamlit as st
 from tmdb_utils import fetch_and_store_movies, display_movies
-from dashboard_utils import clear_database  # Importation de la fonction
+from dashboard_utils import clear_database, add_movie, modify_movie, delete_movie, get_genres  # Importation de la fonction
 
 # Permet de remplir toute la largeur de la page
 st.set_page_config(layout="wide")
@@ -40,6 +40,67 @@ elif page == "📊 Dashboard":
     if st.button("🗑 Vider la base de données"):
         message = clear_database()  # Appel de la fonction pour vider la BDD
         st.success(message)
+
+    # Récupérer la liste des genres depuis la base de données
+    genres_list = get_genres()
+
+    # Section pour ajouter un film
+    st.subheader("➕ Ajouter un film")
+    with st.form("add_movie_form"):
+        title = st.text_input("Titre du film")
+        release_date = st.date_input("Date de sortie")
+        genres = st.multiselect("Genres", genres_list)  # Menu déroulant pour sélectionner plusieurs genres
+        vote_average = st.number_input("Note (0-10)", min_value=0.0, max_value=10.0, step=0.1)
+        popularity = st.number_input("Popularité", min_value=0.0, step=0.1)
+        submit_button = st.form_submit_button("Ajouter")
+
+        if submit_button:
+            result = add_movie(title, str(release_date), genres, vote_average, popularity)
+            st.success(result)
+
+    # Section pour modifier un film
+    st.subheader("✏️ Modifier un film")
+    movie_id_to_modify = st.text_input("ID du film à modifier")
+    if movie_id_to_modify:
+        movie_id_to_modify = movie_id_to_modify.strip()
+        movie_id_to_modify = movie_id_to_modify if movie_id_to_modify.isdigit() else None
+    
+    if movie_id_to_modify:
+        with st.form("modify_movie_form"):
+            title = st.text_input("Nouveau titre du film")
+            release_date = st.date_input("Nouvelle date de sortie")
+            genres = st.multiselect("Nouveaux genres", genres_list)  # Menu déroulant pour modifier les genres
+            vote_average = st.number_input("Nouvelle note (0-10)", min_value=0.0, max_value=10.0, step=0.1)
+            popularity = st.number_input("Nouvelle popularité", min_value=0.0, step=0.1)
+            submit_button_modify = st.form_submit_button("Modifier")
+            
+            if submit_button_modify:
+                result = modify_movie(
+                    movie_id_to_modify, title, str(release_date), genres, vote_average, popularity
+                )
+                st.success(result)
+
+    # Section pour supprimer un film
+    # Section pour supprimer un film
+    st.subheader("🗑 Supprimer un film")
+    movie_id_to_delete = st.text_input("ID du film à supprimer")
+
+    # Vérification si l'ID est un entier valide
+    if movie_id_to_delete:
+        movie_id_to_delete = movie_id_to_delete.strip()
+        try:
+            # Vérifie si l'ID peut être converti en un entier
+            movie_id_to_delete = int(movie_id_to_delete)
+        except ValueError:
+            movie_id_to_delete = None  # Si ce n'est pas un entier, on le met à None
+
+    if movie_id_to_delete is not None:
+        if st.button("Supprimer le film"):
+            result = delete_movie(movie_id_to_delete)
+            st.success(result)
+    else:
+        if movie_id_to_delete:
+            st.error("❌ L'ID doit être un nombre entier valide.")
 
 elif page == "📈 Statistiques":
     st.title("📈 Statistiques")

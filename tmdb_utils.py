@@ -176,7 +176,7 @@ def display_movies():
                 image=f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}",
                 styles={  # Style de la carte
                     "card": {"width": "95%", "height": "400px", "margin": "5px"},
-                    "text": {"white-space": "pre-line", "font-size": "12px"}
+                    "text": {"white-space": "pre-line", "font-size": "16px"}
                 }
             )
     

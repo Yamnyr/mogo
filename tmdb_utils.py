@@ -138,30 +138,60 @@ def fetch_and_store_movies(limit=100):
         st.error(f"Erreur lors de la récupération des films : {e}")
         return None
 
-def display_movies(limit=20):
+def display_movies():
     st.title("🎬 Liste des Films")
 
-    movies = list(movies_collection.find().limit(limit))
+    # Initialisation de la page si elle n'existe pas encore dans le session_state
+    if 'page' not in st.session_state:
+        st.session_state.page = 1  # La page initiale est 1
 
+    movies = list(movies_collection.find())  # Récupère les films depuis MongoDB
     if not movies:
         st.warning("Aucun film trouvé dans la base de données.")
         return
 
+    # Pagination
+    movies_per_page = 20
+    total_pages = (len(movies) - 1) // movies_per_page + 1
+    current_page = st.session_state.page  # Utilisation de la page depuis session_state
+
+    # Calculer les indices pour afficher les films de la page actuelle
+    start_idx = (current_page - 1) * movies_per_page
+    end_idx = start_idx + movies_per_page
+    displayed_movies = movies[start_idx:end_idx]
+
     # Organisation des films en 4 colonnes avec moins d'espace
     cols = st.columns(4)
 
-    for idx, movie in enumerate(movies):
+    # Affichage des films
+    for idx, movie in enumerate(displayed_movies):
         with cols[idx % 4]:
             card(
                 title=movie.get("title", "Titre inconnu"),
-                text="\n".join([
+                text="\n".join([  # Affichage des détails du film
                     f"📅 Sortie : {movie.get('release_date', 'Non dispo')}",
                     f"⭐ Note : {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)",
                     f"🌍 Langue : {movie.get('original_language', 'Non dispo')}"
                 ]),
                 image=f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}",
-                styles={
+                styles={  # Style de la carte
                     "card": {"width": "95%", "height": "400px", "margin": "5px"},
-                    "text": {"white-space": "pre-line", "font-size": "18px"}
+                    "text": {"white-space": "pre-line", "font-size": "12px"}
                 }
             )
+    
+    # Ajouter des boutons pour naviguer entre les pages
+    st.write(f"Page {current_page} sur {total_pages}")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        if current_page > 1:
+            if st.button("⬅ Précédent"):
+                st.session_state.page -= 1
+                st.rerun()  # Recharger la page pour afficher la page précédente
+
+    with col3:
+        if current_page < total_pages:
+            if st.button("Suivant ➡"):
+                st.session_state.page += 1
+                st.rerun()  # Recharger la page pour afficher la page suivante

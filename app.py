@@ -1,3 +1,4 @@
+from stats_utils import plot_statistics
 import streamlit as st
 from tmdb_utils import fetch_and_store_movies, display_movies
 
@@ -31,4 +32,4 @@ elif page == "📊 Dashboard":
 
 elif page == "📈 Statistiques":
     st.title("📈 Statistiques")
-    st.write("🚧 Page en construction... Ajoutez ici des statistiques sur les films.")
+    plot_statistics()

@@ -97,7 +97,7 @@ def fetch_and_store_movies(limit=1000):
 
                     movies_collection.insert_one(movie_details)
                     added_movies += 1
-                    log_container.success(f"✅ Film ajouté: {movie_details.get('title', 'Titre inconnu')}")
+                    # log_container.success(f"✅ Film ajouté: {movie_details.get('title', 'Titre inconnu')}")
 
                 else:
                     skipped_count += 1

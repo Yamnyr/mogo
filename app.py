@@ -20,7 +20,7 @@ elif page == "📥 Importer des films":
     st.write("Cliquez sur le bouton ci-dessous pour récupérer la liste des films d'hier depuis TMDb et les stocker dans MongoDB.")
 
     # Sélection du nombre de films à importer
-    number_of_movies = st.selectbox("Sélectionner le nombre de films à importer", [10, 100, 1000, 10000], index=2)
+    number_of_movies = st.selectbox("Sélectionner le nombre de films à importer", [10, 100, 500, 1000], index=2)
 
     st.write(f"Vous avez choisi d'importer {number_of_movies} films.")
 
@@ -45,17 +45,39 @@ elif page == "📊 Dashboard":
     genres_list = get_genres()
 
     # Section pour ajouter un film
+    # Formulaire d'ajout de film
     st.subheader("➕ Ajouter un film")
     with st.form("add_movie_form"):
         title = st.text_input("Titre du film")
         release_date = st.date_input("Date de sortie")
         genres = st.multiselect("Genres", genres_list)  # Menu déroulant pour sélectionner plusieurs genres
+        overview = st.text_area("Description")  # Description du film
         vote_average = st.number_input("Note (0-10)", min_value=0.0, max_value=10.0, step=0.1)
         popularity = st.number_input("Popularité", min_value=0.0, step=0.1)
+        budget = st.number_input("Budget", min_value=0, step=1)
+        revenue = st.number_input("Revenu", min_value=0, step=1)
+        runtime = st.number_input("Durée (minutes)", min_value=0, step=1)
+        
+        # Pays de production (sélection multiple)
+        production_countries = st.multiselect("Pays de production", ["US", "FR", "GB", "IN", "DE", "ES"])
+        
+        # Langues parlées (peut être une seule langue ou plusieurs)
+        spoken_languages = st.multiselect("Langues parlées", ["English", "French", "Spanish", "German", "Hindi"])
+
+        # Poster URL (ou fichier à télécharger)
+        poster_path = st.text_input("URL de l'image du poster (si disponible)")
+
+        # Autres informations
+        imdb_id = st.text_input("ID IMDb (si disponible)")
+        # tagline = st.text_input("Tagline")
+
         submit_button = st.form_submit_button("Ajouter")
 
         if submit_button:
-            result = add_movie(title, str(release_date), genres, vote_average, popularity)
+            result = add_movie(
+                title, str(release_date), genres, overview, vote_average, popularity, 
+                budget, revenue, runtime, production_countries, spoken_languages, poster_path, imdb_id, tagline
+            )
             st.success(result)
 
     # Section pour modifier un film

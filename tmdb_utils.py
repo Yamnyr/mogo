@@ -141,6 +141,9 @@ def fetch_and_store_movies(limit=100):
 def display_movies():
     st.title("🎬 Liste des Films")
 
+    # Barre de recherche
+    search_query = st.text_input("Rechercher un film par titre", "")
+
     # Initialisation de la page si elle n'existe pas encore dans le session_state
     if 'page' not in st.session_state:
         st.session_state.page = 1  # La page initiale est 1
@@ -150,6 +153,14 @@ def display_movies():
     if not movies:
         st.warning("Aucun film trouvé dans la base de données.")
         return
+
+    # Si une recherche est effectuée, filtre les films par titre
+    if search_query:
+        movies = [movie for movie in movies if search_query.lower() in movie.get("title", "").lower()]
+
+    # Affiche un message si aucun film ne correspond à la recherche
+    if not movies:
+        st.warning(f"Aucun film trouvé pour '{search_query}'.")
 
     # Pagination
     movies_per_page = 20

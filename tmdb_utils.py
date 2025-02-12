@@ -2,6 +2,7 @@ import requests
 import json
 from pymongo import MongoClient
 from datetime import datetime, timedelta
+from streamlit_card import card
 import gzip
 import streamlit as st  # Ajouter cette ligne pour importer Streamlit
 
@@ -68,7 +69,7 @@ def fetch_and_store_movies(limit=1000):
         st.error(f"Erreur lors de la récupération des films : {e}")
         return None
 
-def display_movies(limit=10):
+def display_movies(limit=20):
     st.title("🎬 Liste des Films")
 
     movies = list(collection.find().limit(limit))
@@ -77,16 +78,21 @@ def display_movies(limit=10):
         st.warning("Aucun film trouvé dans la base de données.")
         return
 
-    # Organisation des films en 4 colonnes avec espace entre elles
-    cols = st.columns(4, gap="large")  # Ajoute un espace entre les colonnes
+    # Organisation des films en 4 colonnes avec moins d'espace
+    cols = st.columns(4)
 
     for idx, movie in enumerate(movies):
-        with cols[idx % 4]:  # Répartit les films dans les 4 colonnes
-            with st.container():
-                st.image(f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}", 
-                         caption=movie.get("title", "Titre inconnu"))
-                st.subheader(movie.get("title", "Titre inconnu"))
-                st.write(f"📅 **Sortie :** {movie.get('release_date', 'Non dispo')}")
-                st.write(f"⭐ **Note :** {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)")
-                st.write(f"🌍 **Langue :** {movie.get('original_language', 'Non dispo')}")
-                st.write(f"📝 **Résumé :** {movie.get('overview', 'Pas de résumé')}")
+        with cols[idx % 4]:
+            card(
+                title=movie.get("title", "Titre inconnu"),
+                text="\n".join([
+                    f"📅 Sortie : {movie.get('release_date', 'Non dispo')}",
+                    f"⭐ Note : {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)",
+                    f"🌍 Langue : {movie.get('original_language', 'Non dispo')}"
+                ]),
+                image=f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}",
+                styles={
+                    "card": {"width": "95%", "height": "400px", "margin": "5px"},
+                    "text": {"white-space": "pre-line", "font-size": "18px"}
+                }
+            )

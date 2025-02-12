@@ -2,7 +2,6 @@ import requests
 import json
 from pymongo import MongoClient
 from datetime import datetime, timedelta
-from streamlit_card import card
 import gzip
 import streamlit as st
 
@@ -39,38 +38,18 @@ def insert_movie_collection(movie_collection):
     if movie_collection and not movie_collections_collection.find_one({"id": movie_collection["id"]}):
         movie_collections_collection.insert_one({"id": movie_collection["id"], "name": movie_collection["name"]})
 
-# Récupère les films TMDb et les stocke dans MongoDB (max `limit`).
-import requests
-import json
-from pymongo import MongoClient
-from datetime import datetime, timedelta
-from streamlit_card import card
-import gzip
-import streamlit as st  # Ajouter cette ligne pour importer Streamlit
-
-# Connexion MongoDB
-client = MongoClient("mongodb://localhost:27017/")  # Remplace par ton URI si Atlas
-db = client["movies_db"]
-movies_collection = db["movies"]
-genres_collection = db["genres"]
-production_companies_collection = db["production_companies"]
-movie_collections_collection = db["movie_collections"]
-
-TMDB_API_KEY = "c7cf1f564fa32aed665c2abb44d2ffb9"  # Remplace par ta clé API TMDb
-
-# Récupère les détails d'un film à partir de son ID en utilisant l'API TMDb
-def get_movie_details(movie_id):
-    url = f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={TMDB_API_KEY}&language=fr-FR"
-    response = requests.get(url)
-    return response.json() if response.status_code == 200 else None
-
-# [Autres fonctions inchangées...]
+# Récupère le nombre de films déjà dans la base de données
+def get_existing_movie_count():
+    return movies_collection.count_documents({})
 
 # Récupère les films TMDb et les stocke dans MongoDB (max `limit`).
 def fetch_and_store_movies(limit=100):
+    # Récupère le nombre de films déjà dans la base de données
+    existing_movie_count = get_existing_movie_count()
+
     yesterday = (datetime.today() - timedelta(days=1)).strftime('%m_%d_%Y')
     url = f"https://files.tmdb.org/p/exports/movie_ids_{yesterday}.json.gz"
-    
+
     # Créer une zone pour les logs
     log_container = st.empty()
     progress_bar = st.progress(0)
@@ -84,6 +63,7 @@ def fetch_and_store_movies(limit=100):
             processed_count = 0
             skipped_count = 0
             
+            # Reprendre à partir du nombre de films déjà existants dans la base de données
             for idx, line in enumerate(file):
                 if added_movies >= limit:
                     break
@@ -91,27 +71,29 @@ def fetch_and_store_movies(limit=100):
                 processed_count += 1
                 movie_id = json.loads(line).get("id")
                 
+                # Si le film a déjà été importé, on l'ignore
+                if movies_collection.find_one({"id": movie_id}):
+                    skipped_count += 1
+                    continue
+
                 # Mise à jour des logs
                 log_container.info(f"🔄 Traitement de la ligne {idx + 1}...")
-                
+
                 movie_details = get_movie_details(movie_id)
 
                 if movie_details:
-                    if not movies_collection.find_one({"id": movie_details["id"]}):
-                        insert_genres(movie_details.get("genres", []))
-                        insert_production_companies(movie_details.get("production_companies", []))
-                        insert_movie_collection(movie_details.get("belongs_to_collection", {}))
+                    # Insérer les informations associées
+                    insert_genres(movie_details.get("genres", []))
+                    insert_production_companies(movie_details.get("production_companies", []))
+                    insert_movie_collection(movie_details.get("belongs_to_collection", {}))
 
-                        movie_details["genres"] = [genre["id"] for genre in movie_details.get("genres", [])]
-                        movie_details["production_companies"] = [company["id"] for company in movie_details.get("production_companies", [])]
-                        movie_details["belongs_to_collection"] = movie_details["belongs_to_collection"]["id"] if movie_details.get("belongs_to_collection") else None
+                    movie_details["genres"] = [genre["id"] for genre in movie_details.get("genres", [])]
+                    movie_details["production_companies"] = [company["id"] for company in movie_details.get("production_companies", [])]
+                    movie_details["belongs_to_collection"] = movie_details["belongs_to_collection"]["id"] if movie_details.get("belongs_to_collection") else None
 
-                        movies_collection.insert_one(movie_details)
-                        added_movies += 1
-                        log_container.success(f"✅ Film ajouté: {movie_details.get('title', 'Titre inconnu')}")
-                    else:
-                        skipped_count += 1
-                        log_container.warning(f"⚠️ Film déjà existant: ID {movie_id}")
+                    movies_collection.insert_one(movie_details)
+                    added_movies += 1
+                    log_container.success(f"✅ Film ajouté: {movie_details.get('title', 'Titre inconnu')}")
                 else:
                     skipped_count += 1
                     log_container.error(f"❌ Impossible de récupérer les détails du film ID {movie_id}")
@@ -120,7 +102,7 @@ def fetch_and_store_movies(limit=100):
 
             # Effacer le conteneur de logs temporaire
             log_container.empty()
-            
+
             # Afficher le résumé final
             total_movies = movies_collection.count_documents({})
             st.success(f"""
@@ -128,6 +110,7 @@ def fetch_and_store_movies(limit=100):
             - {added_movies} nouveaux films ajoutés
             - {skipped_count} films ignorés
             - {processed_count} films traités au total
+            - Films déjà présents avant l'importation : {existing_movie_count}
             
             📊 Nombre total de films dans la base de données : {total_movies}
             """)

@@ -43,7 +43,7 @@ def get_existing_movie_count():
     return movies_collection.count_documents({})
 
 # Récupère les films TMDb et les stocke dans MongoDB (max `limit`).
-def fetch_and_store_movies(limit=100):
+def fetch_and_store_movies(limit=1000):
     # Récupère le nombre de films déjà dans la base de données
     existing_movie_count = get_existing_movie_count()
 

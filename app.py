@@ -16,11 +16,16 @@ if page == "🏠 Accueil":
 
 elif page == "📥 Importer des films":
     st.title("📥 Importation de films depuis TMDb")
-    st.write("Cliquez sur le bouton ci-dessous pour récupérer la liste des films d'hier depuis TMDb et les stocker dans MongoDB (max 1000 films).")
+    st.write("Cliquez sur le bouton ci-dessous pour récupérer la liste des films d'hier depuis TMDb et les stocker dans MongoDB.")
+
+    # Sélection du nombre de films à importer
+    number_of_movies = st.selectbox("Sélectionner le nombre de films à importer", [10, 100, 1000, 10000], index=2)
+
+    st.write(f"Vous avez choisi d'importer {number_of_movies} films.")
 
     if st.button("🔄 Récupérer et importer les films"):
         with st.spinner("⏳ Importation en cours..."):
-            added_movies = fetch_and_store_movies()
+            added_movies = fetch_and_store_movies(limit=number_of_movies)
             if isinstance(added_movies, str):  # Gestion des erreurs
                 st.error(f"❌ {added_movies}")
             else:

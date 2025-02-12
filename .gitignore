@@ -1,5 +1,7 @@
 # Exclure le dossier __pycache__
 __pycache__/
+./__pycache__/
+/__pycache__/
 
 # Exclure les fichiers de compilation Python
 *.py[cod]

@@ -16,44 +16,50 @@ collections_collection = db["movie_collections"]
 def get_movie_count():
     """Retourne le nombre total de films en base."""
     return movies_collection.count_documents({})
-
 def get_movies_for_genre(genre_name, limit=5):
     """Retourne une liste des films associés au genre spécifié, triée par popularité."""
     pipeline = [
-        {"$unwind": "$genres"},  # Décomposer les genres
+        {"$unwind": "$genres"},  # Décomposer la liste des genres
         {"$lookup": {
             "from": "genres",
-            "localField": "genres", 
+            "localField": "genres.id",  # Correspondance via l'ID des genres
             "foreignField": "id",
             "as": "genre_info"
         }},
-        {"$unwind": "$genre_info"},  # Décomposer les informations du genre
-        {"$match": {"genre_info.name": genre_name}},  # Filtrer par genre
-        {"$project": {"_id": 0, "title": 1, "vote_average": 1, "release_date": 1, "popularity": 1}},  # Projeter les champs nécessaires
-        {"$sort": {"popularity": -1}},  # Trier par popularité (ordre décroissant)
-        {"$limit": limit}  # Limiter aux N films
+        {"$unwind": "$genre_info"},  # Extraire les détails du genre
+        {"$match": {"genre_info.name": genre_name}},  # Filtrer sur le nom du genre
+        {"$project": {"_id": 0, "title": 1, "vote_average": 1, "release_date": 1, "popularity": 1}},  
+        {"$sort": {"popularity": -1}},  # Trier par popularité
+        {"$limit": limit}  
     ]
     
     return list(movies_collection.aggregate(pipeline))
+
 def get_top_genres():
-    """Retourne tous les genres les plus fréquents en tant que dictionnaire pour le graphique."""
+    """Retourne la liste des genres les plus fréquents."""
     pipeline = [
-        {"$unwind": "$genres"},  # Décomposer les genres en documents individuels
-        {"$lookup": {
-            "from": "genres",  # Jointure avec la collection genres
-            "localField": "genres",  # Champ local dans movies
-            "foreignField": "id",  # Champ à rejoindre dans genres
-            "as": "genre_info"  # Résultat de la jointure sera placé ici
-        }},
-        {"$unwind": "$genre_info"},  # Décomposer les informations du genre dans genre_info
+        {"$unwind": "$genres"},  # Décomposer la liste des genres
         {"$group": {
-            "_id": "$genre_info.name",  # Group par nom de genre
-            "count": { "$sum": 1 }  # Compte le nombre de films par genre
+            "_id": "$genres.id",  # Groupement par ID de genre
+            "count": {"$sum": 1}  # Compter le nombre de films par genre
         }},
-        {"$sort": { "count": -1 }}  # Trie par ordre décroissant du nombre de films
+        {"$lookup": {
+            "from": "genres",
+            "localField": "_id",
+            "foreignField": "id",
+            "as": "genre_info"
+        }},
+        {"$unwind": "$genre_info"},  # Extraire les détails du genre
+        {"$project": {
+            "_id": 0,
+            "genre": "$genre_info.name",  # Associer le nom au lieu de l'ID
+            "count": 1
+        }},
+        {"$sort": {"count": -1}}  # Trier par nombre de films décroissant
     ]
     
     return list(movies_collection.aggregate(pipeline))
+
 
 def get_average_rating():
     """Retourne la note moyenne des films."""
@@ -139,17 +145,20 @@ def plot_statistics():
     top_genres = get_top_genres()
 
     if top_genres:
-        # Graphique en camembert pour la répartition de tous les genres
-        genre_df = pd.DataFrame(top_genres)
-        genre_df.columns = ["Genre", "Nombre de films"]
-        fig_genres = px.pie(genre_df, names="Genre", values="Nombre de films", title="🎭 Répartition des genres les plus populaires")
-        st.plotly_chart(fig_genres)
-
-        # Afficher les films pour les deux genres les plus populaires
-        first_genre_name = top_genres[0]["_id"]
+    # Calculer le ratio des genres
+        genre_counts = {genre["genre"]: genre["count"] for genre in top_genres}
+        genres = list(genre_counts.keys())
+        counts = list(genre_counts.values())
+    
+    # Afficher le graphique camembert pour la répartition des genres
+    fig_genres = px.pie(values=counts, names=genres, title="🍰 Répartition des genres de films")
+    st.plotly_chart(fig_genres)
+    # Afficher les films pour les deux genres les plus populaires
+    if top_genres:
+        first_genre_name = top_genres[0]["genre"]  # Utiliser "genre" au lieu de "_id"
         first_genre_movies = get_movies_for_genre(first_genre_name)
 
-        second_genre_name = top_genres[1]["_id"]
+        second_genre_name = top_genres[1]["genre"]  # Utiliser "genre" au lieu de "_id"
         second_genre_movies = get_movies_for_genre(second_genre_name)
 
         # Afficher les films côte à côte pour les deux genres populaires
@@ -171,6 +180,7 @@ def plot_statistics():
     # Graphique des films par année
     movies_per_year, movies_for_top_year = get_movies_per_year()
     if movies_per_year:
+        col1, col2 = st.columns(2)
         # Afficher le graphique des films par année
         df_years = pd.DataFrame(movies_per_year)
         df_years.columns = ["Année", "Nombre de films"]

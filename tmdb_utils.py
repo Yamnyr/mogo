@@ -128,53 +128,57 @@ def fetch_and_store_movies(limit=1000):
 def display_movies():
     st.title("🎬 Liste des Films")
 
-    # Barre de recherche
-    search_query = st.text_input("Rechercher un film par titre", "")
+    # Barre de recherche avec st.text_input()
+    search_query = st.text_input("🔍 Rechercher un film :", "")
 
-    # Initialisation de la page si elle n'existe pas encore dans le session_state
+    # 📂 Récupérer les genres depuis la collection MongoDB
+    genres_list = list(genres_collection.find({}, {"_id": 0, "id": 1, "name": 1}))
+    genre_options = {genre["name"]: genre["id"] for genre in genres_list}  # Dictionnaire {Nom du genre: ID}
+
+    # 🎭 Ajout du filtre multi-sélection pour les genres
+    selected_genres = st.multiselect("🎭 Filtrer par genre :", options=list(genre_options.keys()))
+
+    # 🎭 Appliquer le filtre par genre si des genres sont sélectionnés
+    if selected_genres:
+        selected_genre_ids = [genre_options[genre] for genre in selected_genres]
+        movies = [movie for movie in movies if any(genre_id in movie.get("genres", []) for genre_id in selected_genre_ids)]
+        
+    # Initialisation de la pagination
     if 'page' not in st.session_state:
-        st.session_state.page = 1  # La page initiale est 1
+        st.session_state.page = 1
 
-    # Récupère les films depuis MongoDB
-    movies = list(movies_collection.find())  
-    if not movies:
-        st.warning("Aucun film trouvé dans la base de données.")
-        return
+    # Récupération de tous les films depuis MongoDB
+    movies = list(movies_collection.find())
 
-    # Si une recherche est effectuée, filtre les films par titre
-    if search_query:
+    # Filtrage basé sur la recherche si l'utilisateur tape quelque chose
+    if search_query.strip():
         movies = [movie for movie in movies if search_query.lower() in movie.get("title", "").lower()]
 
-    # Affiche un message si aucun film ne correspond à la recherche
+    # Si aucun film ne correspond à la recherche
     if not movies:
         st.warning(f"Aucun film trouvé pour '{search_query}'.")
+        return
 
-    # Pagination
+    # Gestion de la pagination
     movies_per_page = 20
-    total_pages = (len(movies) - 1) // movies_per_page + 1
-    current_page = st.session_state.page  # Utilisation de la page depuis session_state
+    total_pages = max(1, (len(movies) - 1) // movies_per_page + 1)
+    current_page = min(st.session_state.page, total_pages)  # S'assurer que la page ne dépasse pas le max
 
-    # Calculer les indices pour afficher les films de la page actuelle
+    # Calcul des indices de pagination
     start_idx = (current_page - 1) * movies_per_page
     end_idx = start_idx + movies_per_page
     displayed_movies = movies[start_idx:end_idx]
 
-    # Organisation des films en 4 colonnes
+    # Organisation des films en colonnes
     cols = st.columns(4)
 
-    # Affichage des films dans des "cartes"
     for idx, movie in enumerate(displayed_movies):
         with cols[idx % 4]:
-            # Construction de l'URL de l'image
-            poster_path = movie.get("poster_path")
-            if poster_path:
-                urlImage = f"https://image.tmdb.org/t/p/w500{poster_path}"
-            else:
-                urlImage = "https://via.placeholder.com/500x750?text=Image+non+disponible"
-            
-            # Affichage de l'image comme carte
+            poster_path = movie.get("poster_path", "")
+            urlImage = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/500x750?text=Image+non+disponible"
+
             st.markdown(f"""
-            <div style=" padding: 10px; border-radius: 10px; width: 300px; height: 700px; margin-bottom: 20px;">
+            <div style="padding: 10px; border-radius: 10px; width: 300px; height: 700px; margin-bottom: 20px;">
                 <img src="{urlImage}" style="width: 100%; height: 450px; border-radius: 8px;">
                 <h3>{movie.get('title', 'Titre inconnu')}</h3>
                 <p>📅 Sortie : {movie.get('release_date', 'Non dispo')}</p>
@@ -183,18 +187,18 @@ def display_movies():
             </div>
             """, unsafe_allow_html=True)
 
-    # Affichage des boutons de pagination
+    # Affichage de la pagination
     st.write(f"Page {current_page} sur {total_pages}")
 
-    # Colonnes pour la pagination
-    col1, col2, col3 = st.columns([1, 3, 1])  # Colonne plus large pour centrer les boutons
+    # Boutons de navigation
+    col1, col2, col3 = st.columns([1, 3, 1])
     with col1:
         if current_page > 1:
             if st.button("⬅ Précédent"):
                 st.session_state.page -= 1
-                st.rerun()  # Recharger la page pour afficher la page précédente
+                st.rerun()
 
-    with col3:  # Le bouton "Suivant" dans la colonne de droite
+    with col3:
         if current_page < total_pages:
             if st.button("Suivant ➡"):
                 st.session_state.page += 1

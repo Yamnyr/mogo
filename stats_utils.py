@@ -28,7 +28,7 @@ def get_movies_for_genre(genre_name, limit=5):
         }},
         {"$unwind": "$genre_info"},  # Extraire les détails du genre
         {"$match": {"genre_info.name": genre_name}},  # Filtrer sur le nom du genre
-        {"$project": {"_id": 0, "title": 1, "vote_average": 1, "release_date": 1, "popularity": 1}},  
+        {"$project": {"_id": 0, "id": 1, "title": 1, "vote_average": 1, "release_date": 1}},  
         {"$sort": {"popularity": -1}},  # Trier par popularité
         {"$limit": limit}  
     ]
@@ -98,7 +98,7 @@ def get_movies_for_year(year, limit=10):
             "year": {"$substr": ["$release_date", 0, 4]}  # Extraire l'année à partir de la chaîne de date
         }},
         {"$match": {"year": str(year)}},  # Filtrer par année
-        {"$project": {"_id": 0, "title": 1, "vote_average": 1, "release_date": 1, "popularity": 1}},  # Projeter les champs nécessaires
+        {"$project": {"_id": 0,"id": 1, "title": 1, "vote_average": 1, "release_date": 1}},  # Projeter les champs nécessaires
         {"$sort": {"popularity": -1}},  # Trier par popularité (ordre décroissant)
         {"$limit": limit}  # Limiter aux N films
     ]
@@ -121,12 +121,12 @@ def get_movies_for_country_and_popularity():
     """Retourne les films les plus populaires d'un pays spécifié sans doublons."""
     pipeline = [
         {"$match": {"original_language": "fr"}},  # Filtrer par pays
-        {"$group": {
-            "_id": "$title",  # Regrouper par titre de film pour éviter les doublons
-            "title": {"$first": "$title"},  # Garder le titre du film
-            "popularity": {"$first": "$popularity"},  # Garder la popularité du film
-            "release_date": {"$first": "$release_date"}  # Garder la date de sortie
-        }},
+        {"$project": {"_id": 0,"id": 1, "title": 1, "vote_average": 1, "release_date": 1}},  # Projeter les champs nécessaires
+        # {"$group": {
+        #     "_id": "$title",  # Regrouper par titre de film pour éviter les doublons
+        #     "release_date": {"$first": "$release_date"},  # Garder la date de sortie
+        #     "title": {"$first": "$title"}  # Garder le titre du film
+        # }},
         {"$sort": {"popularity": -1}},  # Trier par popularité (ordre décroissant)
     ]
     return list(movies_collection.aggregate(pipeline))

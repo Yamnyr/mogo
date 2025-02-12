@@ -145,7 +145,8 @@ def display_movies():
     if 'page' not in st.session_state:
         st.session_state.page = 1  # La page initiale est 1
 
-    movies = list(movies_collection.find())  # Récupère les films depuis MongoDB
+    # Récupère les films depuis MongoDB
+    movies = list(movies_collection.find())  
     if not movies:
         st.warning("Aucun film trouvé dans la base de données.")
         return
@@ -160,37 +161,42 @@ def display_movies():
     end_idx = start_idx + movies_per_page
     displayed_movies = movies[start_idx:end_idx]
 
-    # Organisation des films en 4 colonnes avec moins d'espace
+    # Organisation des films en 4 colonnes
     cols = st.columns(4)
 
-    # Affichage des films
+    # Affichage des films dans des "cartes"
     for idx, movie in enumerate(displayed_movies):
         with cols[idx % 4]:
-            card(
-                title=movie.get("title", "Titre inconnu"),
-                text="\n".join([  # Affichage des détails du film
-                    f"📅 Sortie : {movie.get('release_date', 'Non dispo')}",
-                    f"⭐ Note : {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)",
-                    f"🌍 Langue : {movie.get('original_language', 'Non dispo')}"
-                ]),
-                image=f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}",
-                styles={  # Style de la carte
-                    "card": {"width": "95%", "height": "400px", "margin": "5px"},
-                    "text": {"white-space": "pre-line", "font-size": "16px"}
-                }
-            )
-    
-    # Ajouter des boutons pour naviguer entre les pages
+            # Construction de l'URL de l'image
+            poster_path = movie.get("poster_path")
+            if poster_path:
+                urlImage = f"https://image.tmdb.org/t/p/w500{poster_path}"
+            else:
+                urlImage = "https://via.placeholder.com/500x750?text=Image+non+disponible"
+            
+            # Affichage de l'image comme carte
+            st.markdown(f"""
+            <div style=" padding: 10px; border-radius: 10px; width: 300px; height: 700px; margin-bottom: 20px;">
+                <img src="{urlImage}" style="width: 100%; height: 450px; border-radius: 8px;">
+                <h3>{movie.get('title', 'Titre inconnu')}</h3>
+                <p>📅 Sortie : {movie.get('release_date', 'Non dispo')}</p>
+                <p>⭐ Note : {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)</p>
+                <p>🌍 Langue : {movie.get('original_language', 'Non dispo')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Affichage des boutons de pagination
     st.write(f"Page {current_page} sur {total_pages}")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
+
+    # Colonnes pour la pagination
+    col1, col2, col3 = st.columns([1, 3, 1])  # Colonne plus large pour centrer les boutons
     with col1:
         if current_page > 1:
             if st.button("⬅ Précédent"):
                 st.session_state.page -= 1
                 st.rerun()  # Recharger la page pour afficher la page précédente
 
-    with col3:
+    with col3:  # Le bouton "Suivant" dans la colonne de droite
         if current_page < total_pages:
             if st.button("Suivant ➡"):
                 st.session_state.page += 1

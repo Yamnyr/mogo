@@ -1,6 +1,7 @@
 from stats_utils import plot_statistics
 import streamlit as st
 from tmdb_utils import fetch_and_store_movies, display_movies
+from dashboard_utils import clear_database  # Importation de la fonction
 
 # Permet de remplir toute la largeur de la page
 st.set_page_config(layout="wide")
@@ -33,7 +34,12 @@ elif page == "📥 Importer des films":
 
 elif page == "📊 Dashboard":
     st.title("📊 Dashboard")
-    st.write("🚧 Page en construction... Ajoutez ici des graphiques et indicateurs pour analyser les films.")
+    st.write("🚀 Ici, vous pouvez gérer les films stockés dans la base de données.")
+
+    # Bouton pour vider la base de données
+    if st.button("🗑 Vider la base de données"):
+        message = clear_database()  # Appel de la fonction pour vider la BDD
+        st.success(message)
 
 elif page == "📈 Statistiques":
     st.title("📈 Statistiques")

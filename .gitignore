@@ -1,2 +1,21 @@
-./__pycache__
-/__pycache__
+# Exclure le dossier __pycache__
+__pycache__/
+
+# Exclure les fichiers de compilation Python
+*.py[cod]
+
+# Exclure les environnements virtuels
+venv/
+.env/
+
+# Exclure les fichiers de logs et de débogage
+*.log
+
+# Exclure les fichiers de configuration de l'IDE
+.vscode/
+.idea/
+
+# Exclure les fichiers de dépendances
+*.egg-info/
+dist/
+build/

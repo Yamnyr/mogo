@@ -44,13 +44,11 @@ def get_existing_movie_count():
 
 # Récupère les films TMDb et les stocke dans MongoDB (max `limit`).
 def fetch_and_store_movies(limit=1000):
-    # Récupère le nombre de films déjà dans la base de données
     existing_movie_count = get_existing_movie_count()
 
     yesterday = (datetime.today() - timedelta(days=1)).strftime('%m_%d_%Y')
     url = f"https://files.tmdb.org/p/exports/movie_ids_{yesterday}.json.gz"
 
-    # Créer une zone pour les logs
     log_container = st.empty()
     progress_bar = st.progress(0)
     
@@ -79,16 +77,9 @@ def fetch_and_store_movies(limit=1000):
                 movie_details = get_movie_details(movie_id)
 
                 if movie_details:
-                    # Insérer les genres dans la collection "genres"
                     insert_genres(movie_details.get("genres", []))
-
-                    # Transformation des genres en liste d'objets { "id": genre_id }
                     genre_ids = [{"id": genre["id"]} for genre in movie_details.get("genres", [])]
-
-                    # Mettre à jour les genres dans movie_details
                     movie_details["genres"] = genre_ids
-
-                    # Insérer les informations associées
                     insert_production_companies(movie_details.get("production_companies", []))
                     insert_movie_collection(movie_details.get("belongs_to_collection", {}))
 
@@ -97,8 +88,6 @@ def fetch_and_store_movies(limit=1000):
 
                     movies_collection.insert_one(movie_details)
                     added_movies += 1
-                    # log_container.success(f"✅ Film ajouté: {movie_details.get('title', 'Titre inconnu')}")
-
                 else:
                     skipped_count += 1
                     log_container.error(f"❌ Impossible de récupérer les détails du film ID {movie_id}")
@@ -117,7 +106,6 @@ def fetch_and_store_movies(limit=1000):
             
             📊 Nombre total de films dans la base de données : {total_movies}
             """)
-            
             return added_movies
             
     except requests.RequestException as e:
@@ -128,12 +116,26 @@ def fetch_and_store_movies(limit=1000):
 def display_movies():
     st.title("🎬 Liste des Films")
 
-    # Barre de recherche avec st.text_input()
-    search_query = st.text_input("🔍 Rechercher un film :", "")
+    # Organiser la barre de recherche et le menu "Trier"
+    col1, col2 = st.columns([3, 1])  # La première colonne est plus large que la seconde
 
-    # 📂 Récupérer les genres depuis la collection MongoDB
+    with col1:
+        search_query = st.text_input("🔍 Rechercher un film :", "")
+
+    with col2:
+        sort_option = st.selectbox(
+            "Trier par",
+            options=[
+                "Date croissante",
+                "Date décroissante",
+                "Popularité croissante",
+                "Popularité décroissante"
+            ]
+        )
+
+    # Récupérer les genres depuis la collection MongoDB
     genres_list = list(genres_collection.find({}, {"_id": 0, "id": 1, "name": 1}))
-    genre_options = {genre["name"]: genre["id"] for genre in genres_list}  # Dictionnaire {Nom du genre: ID}
+    genre_options = {genre["name"]: genre["id"] for genre in genres_list}
 
     # 🎭 Ajout du filtre multi-sélection pour les genres
     selected_genres = st.multiselect("🎭 Filtrer par genre :", options=list(genre_options.keys()))
@@ -141,15 +143,24 @@ def display_movies():
     # Récupération de tous les films depuis MongoDB
     movies = list(movies_collection.find())
 
-    # 🎭 Appliquer le filtre par genre si des genres sont sélectionnés
+    # Appliquer le filtre par genre si des genres sont sélectionnés
     if selected_genres:
         selected_genre_ids = [genre_options[genre] for genre in selected_genres]
-        # Filtrer les films qui contiennent au moins tous les genres sélectionnés
         movies = [movie for movie in movies if all(genre_id in [g["id"] for g in movie.get("genres", [])] for genre_id in selected_genre_ids)]
 
     # Filtrage basé sur la recherche si l'utilisateur tape quelque chose
     if search_query.strip():
         movies = [movie for movie in movies if search_query.lower() in movie.get("title", "").lower()]
+
+    # Appliquer le tri en fonction de la sélection
+    if sort_option == "Date croissante":
+        movies.sort(key=lambda x: datetime.strptime(x["release_date"], "%Y-%m-%d"))
+    elif sort_option == "Date décroissante":
+        movies.sort(key=lambda x: datetime.strptime(x["release_date"], "%Y-%m-%d"), reverse=True)
+    elif sort_option == "Popularité croissante":
+        movies.sort(key=lambda x: x["popularity"])
+    elif sort_option == "Popularité décroissante":
+        movies.sort(key=lambda x: x["popularity"], reverse=True)
 
     # Si aucun film ne correspond à la recherche
     if not movies:
@@ -163,14 +174,12 @@ def display_movies():
     # Gestion de la pagination
     movies_per_page = 20
     total_pages = max(1, (len(movies) - 1) // movies_per_page + 1)
-    current_page = min(st.session_state.page, total_pages)  # S'assurer que la page ne dépasse pas le max
+    current_page = min(st.session_state.page, total_pages)
 
-    # Calcul des indices de pagination
     start_idx = (current_page - 1) * movies_per_page
     end_idx = start_idx + movies_per_page
     displayed_movies = movies[start_idx:end_idx]
 
-    # Organisation des films en colonnes
     cols = st.columns(4)
 
     for idx, movie in enumerate(displayed_movies):
@@ -189,10 +198,9 @@ def display_movies():
             """, unsafe_allow_html=True)
 
             # Bouton "Voir les détails"
-            # Bouton "Voir les détails"
             if st.button(f"Voir les détails", key=f"details_{movie.get('id')}"):
                 st.session_state.selected_movie = movie.get("id")
-                st.switch_page("pages/movie_details.py")  # Redirige vers la nouvelle page
+                st.switch_page("pages/movie_details.py")
 
     # Affichage de la pagination
     st.write(f"Page {current_page} sur {total_pages}")

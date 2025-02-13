@@ -138,17 +138,14 @@ def display_movies():
     # 🎭 Ajout du filtre multi-sélection pour les genres
     selected_genres = st.multiselect("🎭 Filtrer par genre :", options=list(genre_options.keys()))
 
+    # Récupération de tous les films depuis MongoDB
+    movies = list(movies_collection.find())
+
     # 🎭 Appliquer le filtre par genre si des genres sont sélectionnés
     if selected_genres:
         selected_genre_ids = [genre_options[genre] for genre in selected_genres]
-        movies = [movie for movie in movies if any(genre_id in movie.get("genres", []) for genre_id in selected_genre_ids)]
-        
-    # Initialisation de la pagination
-    if 'page' not in st.session_state:
-        st.session_state.page = 1
-
-    # Récupération de tous les films depuis MongoDB
-    movies = list(movies_collection.find())
+        # Filtrage des films par genre en utilisant les ids des genres
+        movies = [movie for movie in movies if any(genre["id"] in selected_genre_ids for genre in movie.get("genres", []))]
 
     # Filtrage basé sur la recherche si l'utilisateur tape quelque chose
     if search_query.strip():
@@ -158,6 +155,10 @@ def display_movies():
     if not movies:
         st.warning(f"Aucun film trouvé pour '{search_query}'.")
         return
+
+    # Initialisation de la pagination
+    if 'page' not in st.session_state:
+        st.session_state.page = 1
 
     # Gestion de la pagination
     movies_per_page = 20
@@ -178,7 +179,7 @@ def display_movies():
             urlImage = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/500x750?text=Image+non+disponible"
 
             st.markdown(f"""
-            <div style="padding: 10px; border-radius: 10px; width: 300px; height: 700px; margin-bottom: 20px;">
+            <div style="padding: 10px; border-radius: 10px; width: 300px; height: 700px; margin-bottom: 5px;">
                 <img src="{urlImage}" style="width: 100%; height: 450px; border-radius: 8px;">
                 <h3>{movie.get('title', 'Titre inconnu')}</h3>
                 <p>📅 Sortie : {movie.get('release_date', 'Non dispo')}</p>
@@ -186,6 +187,12 @@ def display_movies():
                 <p>🌍 Langue : {movie.get('original_language', 'Non dispo')}</p>
             </div>
             """, unsafe_allow_html=True)
+
+            # Bouton "Voir les détails"
+            # Bouton "Voir les détails"
+            if st.button(f"Voir les détails", key=f"details_{movie.get('id')}"):
+                st.session_state.selected_movie = movie.get("id")
+                st.switch_page("pages/movie_details.py")  # Redirige vers la nouvelle page
 
     # Affichage de la pagination
     st.write(f"Page {current_page} sur {total_pages}")

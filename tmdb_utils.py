@@ -144,8 +144,8 @@ def display_movies():
     # 🎭 Appliquer le filtre par genre si des genres sont sélectionnés
     if selected_genres:
         selected_genre_ids = [genre_options[genre] for genre in selected_genres]
-        # Filtrage des films par genre en utilisant les ids des genres
-        movies = [movie for movie in movies if all(genre["id"] in selected_genre_ids for genre in movie.get("genres", []))]
+        # Filtrer les films qui contiennent au moins tous les genres sélectionnés
+        movies = [movie for movie in movies if all(genre_id in [g["id"] for g in movie.get("genres", [])] for genre_id in selected_genre_ids)]
 
     # Filtrage basé sur la recherche si l'utilisateur tape quelque chose
     if search_query.strip():

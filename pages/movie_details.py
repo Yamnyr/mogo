@@ -25,8 +25,13 @@ movie = movies_collection.find_one({"id": movie_id})
 # Afficher les détails du film
 if movie:
     # Créer deux colonnes : une pour l'image et une pour le texte
-    col1, col2 = st.columns([2, 3])  # [2, 3] signifie que la première colonne (pour l'image) prend 2 parts et la seconde (texte) prend 3 parts
+    # Nouveau : Ajouter l'iframe pour VidBinge
+    tmdb_id = movie.get("id", None)
+    if tmdb_id:
+        iframe_url = f"https://player.vidbinge.com/media/tmdb-movie-{tmdb_id}"
+        st.markdown(f'<iframe src="{iframe_url}" width="100%" height="800px" frameborder="0"></iframe>', unsafe_allow_html=True)
 
+    col1, col2 = st.columns([2, 3])  # [2, 3] signifie que la première colonne (pour l'image) prend 2 parts et la seconde (texte) prend 3 parts
     with col1:
         # Affichage de l'image (poster du film)
         poster_path = movie.get("poster_path", "")

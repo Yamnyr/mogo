@@ -124,6 +124,9 @@ def display_movies():
         search_query = st.text_input("🔍 Rechercher un film :", value=st.session_state.get('search_query', ""))
 
     with col2:
+        if 'sort_option' not in st.session_state:
+            st.session_state.sort_option = "Popularité décroissante"  # Valeur par défaut
+
         sort_option = st.selectbox(
             "Trier par",
             options=[
@@ -132,8 +135,17 @@ def display_movies():
                 "Popularité croissante",
                 "Popularité décroissante"
             ],
-            index=st.session_state.get('sort_option_index', 3)  # Récupère l'index du tri
+            index=[
+                "Date croissante",
+                "Date décroissante",
+                "Popularité croissante",
+                "Popularité décroissante"
+            ].index(st.session_state.sort_option)  # Utilise la valeur stockée
         )
+
+    # Sauvegarde la nouvelle valeur sélectionnée
+    st.session_state.sort_option = sort_option
+
 
     # Récupérer les genres depuis la collection MongoDB
     genres_list = list(genres_collection.find({}, {"_id": 0, "id": 1, "name": 1}))

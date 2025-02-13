@@ -145,19 +145,10 @@ def display_movies():
             ].index(st.session_state.sort_option),  # Utilisation de la valeur en session
         )
 
-<<<<<<< HEAD
-        # Détecter un changement et forcer le rafraîchissement
-        if sort_option != st.session_state.sort_option:
-            st.session_state.sort_option = sort_option
-            st.rerun()  # Recharge la page immédiatement
-
-
-=======
         # Force la mise à jour manuelle si la valeur a changé
         if st.session_state.sort_option != sort_option:
             st.session_state.sort_option = sort_option
             st.rerun()
->>>>>>> bcf5234202ff63536c6e05ca94b5f213f576f9a5
 
     # Récupérer les genres depuis la collection MongoDB
     genres_list = list(genres_collection.find({}, {"_id": 0, "id": 1, "name": 1}))

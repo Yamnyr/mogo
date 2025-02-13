@@ -135,6 +135,40 @@ def get_most_popular_movies(limit=10):
     """Retourne les films les plus populaires."""
     return list(movies_collection.find({}, {"title": 1, "popularity": 1}).sort("popularity", -1).limit(limit))
 
+def get_revenue_by_genre():
+    """Retourne les revenus totaux par genre."""
+    pipeline = [
+        {"$unwind": "$genres"},
+        {"$lookup": {
+            "from": "genres",
+            "localField": "genres.id",
+            "foreignField": "id",
+            "as": "genre_info"
+        }},
+        {"$unwind": "$genre_info"},
+        {"$group": {
+            "_id": "$genre_info.name",
+            "total_revenue": {"$sum": "$revenue"}
+        }},
+        {"$sort": {"total_revenue": -1}}
+    ]
+    return list(movies_collection.aggregate(pipeline))
+
+def get_revenue_vs_popularity():
+    """Retourne la corrélation entre la popularité et les revenus des films."""
+    pipeline = [
+        {"$project": {
+            "_id": 0,
+            "title": 1,
+            "popularity": 1,
+            "revenue": 1
+        }},
+        {"$sort": {"popularity": -1}}
+    ]
+    return list(movies_collection.aggregate(pipeline))
+
+
+
 def plot_statistics():
     """Affiche les statistiques sous forme de graphiques et tables."""
     st.subheader("📊 Statistiques générales")
@@ -221,3 +255,19 @@ def plot_statistics():
         df_popular = pd.DataFrame(most_popular_movies, columns=["title", "popularity"])
         fig = px.bar(df_popular, x="title", y="popularity", title="🔥 Films les plus populaires", color="popularity")
         st.plotly_chart(fig)    
+
+
+    revenues_by_genre = get_revenue_by_genre()
+    if revenues_by_genre:
+        df_revenues = pd.DataFrame(revenues_by_genre)
+        df_revenues.columns = ["Genre", "Total des revenus"]
+        fig_genres_revenue = px.bar(df_revenues, x="Genre", y="Total des revenus", title="🎥 Revenus par genre")
+        st.plotly_chart(fig_genres_revenue)
+
+    # Graphique popularité vs revenus
+    revenue_vs_popularity = get_revenue_vs_popularity()
+    if revenue_vs_popularity:
+        df_rev_pop = pd.DataFrame(revenue_vs_popularity)
+        fig_rev_pop = px.scatter(df_rev_pop, x="popularity", y="revenue", hover_data=["title"],
+                                title="📊 Corrélation entre popularité et revenus")
+        st.plotly_chart(fig_rev_pop)

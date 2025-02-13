@@ -32,7 +32,6 @@ if movie:
         poster_path = movie.get("poster_path", "")
         if poster_path:
             st.image(f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}")
-            # st.image(f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}", use_container_width=True)
 
     with col2:
         # Affichage des détails textuels du film

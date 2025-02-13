@@ -97,6 +97,7 @@ def fetch_and_store_movies(limit=1000):
             log_container.empty()
 
             total_movies = movies_collection.count_documents({})
+            st.balloons()
             st.success(f"""
             ✅ Importation terminée avec succès !
             - {added_movies} nouveaux films ajoutés
@@ -120,7 +121,7 @@ def display_movies():
     col1, col2 = st.columns([3, 1])  # La première colonne est plus large que la seconde
 
     with col1:
-        search_query = st.text_input("🔍 Rechercher un film :", "")
+        search_query = st.text_input("🔍 Rechercher un film :", value=st.session_state.get('search_query', ""))
 
     with col2:
         sort_option = st.selectbox(
@@ -130,7 +131,8 @@ def display_movies():
                 "Date décroissante",
                 "Popularité croissante",
                 "Popularité décroissante"
-            ]
+            ],
+            index=st.session_state.get('sort_option_index', 0)  # Récupère l'index du tri
         )
 
     # Récupérer les genres depuis la collection MongoDB
@@ -138,7 +140,16 @@ def display_movies():
     genre_options = {genre["name"]: genre["id"] for genre in genres_list}
 
     # 🎭 Ajout du filtre multi-sélection pour les genres
-    selected_genres = st.multiselect("🎭 Filtrer par genre :", options=list(genre_options.keys()))
+    selected_genres = st.multiselect(
+        "🎭 Filtrer par genre :",
+        options=list(genre_options.keys()),
+        default=st.session_state.get('selected_genres', [])  # Garder les genres sélectionnés
+    )
+
+    # Sauvegarder les filtres dans la session
+    st.session_state.search_query = search_query
+    st.session_state.selected_genres = selected_genres
+    st.session_state.sort_option_index = sort_option.index(sort_option)  # Sauvegarder l'index du tri
 
     # Récupération de tous les films depuis MongoDB
     movies = list(movies_collection.find())

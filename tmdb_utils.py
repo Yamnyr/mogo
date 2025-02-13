@@ -145,17 +145,8 @@ def display_movies():
     if selected_genres:
         selected_genre_ids = [genre_options[genre] for genre in selected_genres]
         # Filtrage des films par genre en utilisant les ids des genres
-        # Filtrage des films en utilisant une combinaison des logiques "et" et "ou"
-        movies = [
-            movie for movie in movies
-            if (
-                # Logique "et" : Vérifier si tous les genres sélectionnés sont présents
-                all(genre["id"] in selected_genre_ids for genre in movie.get("genres", []))
-                or
-                # Logique "ou" : Vérifier si au moins un genre sélectionné est présent
-                any(genre["id"] in selected_genre_ids for genre in movie.get("genres", []))
-            )
-        ]
+        movies = [movie for movie in movies if all(genre["id"] in selected_genre_ids for genre in movie.get("genres", []))]
+
     # Filtrage basé sur la recherche si l'utilisateur tape quelque chose
     if search_query.strip():
         movies = [movie for movie in movies if search_query.lower() in movie.get("title", "").lower()]

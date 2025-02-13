@@ -20,7 +20,7 @@ elif page == "📥 Importer des films":
     st.write("Cliquez sur le bouton ci-dessous pour récupérer la liste des films d'hier depuis TMDb et les stocker dans MongoDB.")
 
     # Sélection du nombre de films à importer
-    number_of_movies = st.selectbox("Sélectionner le nombre de films à importer", [10, 100, 500, 1000], index=2)
+    number_of_movies = st.slider("Sélectionner le nombre de films à importer", min_value=10, max_value=1000, step=10, value=500)
 
     st.write(f"Vous avez choisi d'importer {number_of_movies} films.")
 

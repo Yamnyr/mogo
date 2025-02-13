@@ -1,7 +1,7 @@
 from stats_utils import plot_statistics
 import streamlit as st
 from tmdb_utils import fetch_and_store_movies, display_movies
-from dashboard_utils import clear_database, add_movie, modify_movie, delete_movie, get_genres, get_production_companies  # Importation de la fonction
+from dashboard_utils import clear_database, add_movie, delete_movie, get_genres, get_production_companies  # Importation de la fonction
 
 # Permet de remplir toute la largeur de la page
 st.set_page_config(layout="wide")
@@ -70,57 +70,61 @@ elif page == "📊 Dashboard":
 
         poster_path = st.text_input("Chemin de l'affiche (URL)")
         imdb_id = st.text_input("ID IMDb")
-        tmdb_id = st.text_input("ID TMDb (facultatif)")
+        tmdb_id = st.number_input("ID TMDb", min_value=0, step=1, format="%d")
+
 
         submit_button = st.form_submit_button("Ajouter")
 
         if submit_button:
-            # Filtrage des compagnies de production sélectionnées
-            selected_companies = [
-                company["id"] for company in production_companies_list if company["name"] in production_companies
-            ]
-            
-            result = add_movie(
-                title, 
-                str(release_date), 
-                genres, 
-                overview, 
-                vote_average, 
-                popularity, 
-                budget, 
-                revenue, 
-                runtime, 
-                selected_companies, 
-                spoken_languages, 
-                poster_path, 
-                imdb_id, 
-                tmdb_id
-            )
-            st.success(result)
+            if not title or not release_date or not genres or not overview or popularity is None or not production_companies or not tmdb_id:
+                st.error("❌ Veuillez remplir tous les champs obligatoires (Titre, Date de sortie, Genres, Résumé, Note, Popularité, ID TMDb).")
+            else:
+                # Filtrage des compagnies de production sélectionnées
+                selected_companies = [
+                    company["id"] for company in production_companies_list if company["name"] in production_companies
+                ]
+
+                result = add_movie(
+                    title, 
+                    str(release_date), 
+                    genres, 
+                    overview, 
+                    vote_average, 
+                    popularity, 
+                    budget, 
+                    revenue, 
+                    runtime, 
+                    selected_companies,  # Corrigé : Passer les IDs des compagnies
+                    spoken_languages, 
+                    poster_path, 
+                    imdb_id,  
+                    tmdb_id
+                )
+                st.success(result)
 
 
 
-        # Section pour modifier un film
-        st.subheader("✏️ Modifier un film")
-        movie_id_to_modify = st.text_input("ID du film à modifier")
-        if movie_id_to_modify:
-            movie_id_to_modify = movie_id_to_modify.strip()
-            movie_id_to_modify = movie_id_to_modify if movie_id_to_modify.isdigit() else None
+        # # Section pour modifier un film
+        # st.subheader("✏️ Modifier un film")
+        # movie_id_to_modify = st.text_input("ID du film à modifier")
+        # if movie_id_to_modify:
+        #     movie_id_to_modify = movie_id_to_modify.strip()
+        #     movie_id_to_modify = movie_id_to_modify if movie_id_to_modify.isdigit() else None
         
-        if movie_id_to_modify:
-            with st.form("modify_movie_form"):
-                title = st.text_input("Nouveau titre du film")
-                release_date = st.date_input("Nouvelle date de sortie")
-                genres = st.multiselect("Nouveaux genres", genres_list)  # Menu déroulant pour modifier les genres
-                vote_average = st.number_input("Nouvelle note (0-10)", min_value=0.0, max_value=10.0, step=0.1)
-                popularity = st.number_input("Nouvelle popularité", min_value=0.0, step=0.1)
-                submit_button_modify = st.form_submit_button("Modifier")
+        # if movie_id_to_modify:
+        #     with st.form("modify_movie_form"):
+        #         title = st.text_input("Nouveau titre du film")
+        #         release_date = st.date_input("Nouvelle date de sortie")
+        #         genres = st.multiselect("Nouveaux genres", genres_list)  # Menu déroulant pour modifier les genres
+        #         vote_average = st.number_input("Nouvelle note (0-10)", min_value=0.0, max_value=10.0, step=0.1)
+        #         popularity = st.number_input("Nouvelle popularité", min_value=0.0, step=0.1)
+        #         submit_button_modify = st.form_submit_button("Modifier")
                 
-                if submit_button_modify:
-                    result = modify_movie(
-                        movie_id_to_modify, title, str(release_date), genres, vote_average, popularity
-                    )
-                    st.success(result)
+        #         if submit_button_modify:
+        #             result = modify_movie(
+        #                 movie_id_to_modify, title, str(release_date), genres, vote_average, popularity
+        #             )
+        #             st.success(result)
 
     # Section pour supprimer un film
     # Section pour supprimer un film

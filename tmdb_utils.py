@@ -132,7 +132,7 @@ def display_movies():
                 "Popularité croissante",
                 "Popularité décroissante"
             ],
-            index=st.session_state.get('sort_option_index', 0)  # Récupère l'index du tri
+            index=st.session_state.get('sort_option_index', 3)  # Récupère l'index du tri
         )
 
     # Récupérer les genres depuis la collection MongoDB

@@ -14,7 +14,7 @@ st.title("🎬 Détails du Film")
 # Vérifier si un film a été sélectionné
 if "selected_movie" not in st.session_state or st.session_state.selected_movie is None:
     st.warning("Aucun film sélectionné. Retour à la liste des films.")
-    st.switch_page("app.py")
+    st.experimental_rerun()  # Recharge la page actuelle pour retourner à la liste des films
 
 # Récupérer l'ID du film sélectionné (s'assurer que c'est un entier)
 movie_id = int(st.session_state.selected_movie)  # Conversion explicite en entier
@@ -24,55 +24,65 @@ movie = movies_collection.find_one({"id": movie_id})
 
 # Afficher les détails du film
 if movie:
-    st.image(f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}", width=300)
-    st.subheader(movie.get("title", "Titre inconnu"))
-    st.write(f"Date de sortie : {movie.get('release_date', 'Non disponible')}")
-    st.write(f"Note : {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)")
+    # Créer deux colonnes : une pour l'image et une pour le texte
+    col1, col2 = st.columns([2, 3])  # [2, 3] signifie que la première colonne (pour l'image) prend 2 parts et la seconde (texte) prend 3 parts
 
-    # Genres
-    genre_ids = [genre["id"] for genre in movie.get("genres", [])]
-    genre_map = {genre["id"]: genre["name"] for genre in genres_collection.find()}
-    genre_names = [genre_map.get(genre_id, "Inconnu") for genre_id in genre_ids]
-    st.write(f"Genres : {', '.join(genre_names) if genre_names else 'Non disponible'}")
+    with col1:
+        # Affichage de l'image (poster du film)
+        poster_path = movie.get("poster_path", "")
+        if poster_path:
+            st.image(f"https://image.tmdb.org/t/p/w500{movie.get('poster_path', '')}", use_container_width=True)
 
-    # Nouveau : Affichage des autres détails
-    st.write(f"Durée : {movie.get('runtime', 'Non disponible')} minutes")
-    st.write(f"Revenue : {movie.get('revenue', 0)} USD")
-    st.write(f"Synopsis : {movie.get('overview', 'Aucun synopsis disponible.')}")
+    with col2:
+        # Affichage des détails textuels du film
+        st.subheader(movie.get("title", "Titre inconnu"))
+        st.write(f"**Date de sortie :** {movie.get('release_date', 'Non disponible')}")
+        st.write(f"**Note :** {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)")
 
-    # Vérification de la collection (si elle existe)
-    collection_id = movie.get("belongs_to_collection", None)
-    if collection_id:
-        collection = movie_collections.find_one({"id": collection_id})
-        collection_name = collection.get("name", "Non disponible") if collection else "Non disponible"
-        st.write(f"Collection : {collection_name}")
-    else:
-        st.write("Collection : Aucune")
+        # Genres
+        genre_ids = [genre["id"] for genre in movie.get("genres", [])]
+        genre_map = {genre["id"]: genre["name"] for genre in genres_collection.find()}
+        genre_names = [genre_map.get(genre_id, "Inconnu") for genre_id in genre_ids]
+        st.write(f"**Genres :** {', '.join(genre_names) if genre_names else 'Non disponible'}")
 
-    # IMDb ID
-    imdb_id = movie.get("imdb_id", "Non disponible")
-    st.write(f"IMDb : [Lien IMDb](https://www.imdb.com/title/{imdb_id})" if imdb_id != "Non disponible" else "IMDb : Non disponible")
+        # Nouveau : Affichage des autres détails
+        st.write(f"**Durée :** {movie.get('runtime', 'Non disponible')} minutes")
+        st.write(f"**Revenue :** {movie.get('revenue', 0)} USD")
+        st.write(f"**Synopsis :** {movie.get('overview', 'Aucun synopsis disponible.')}")
 
-    # Pays d'origine
-    origin_country = ", ".join(movie.get("origin_country", ["Non disponible"]))
-    st.write(f"Pays d'origine : {origin_country}")
+        # Vérification de la collection (si elle existe)
+        collection_id = movie.get("belongs_to_collection", None)
+        if collection_id:
+            collection = movie_collections.find_one({"id": collection_id})
+            collection_name = collection.get("name", "Non disponible") if collection else "Non disponible"
+            st.write(f"**Collection :** {collection_name}")
+        else:
+            st.write("**Collection :** Aucune")
 
-    # Langues parlées
-    spoken_languages = ", ".join([lang.get("name", "Inconnu") for lang in movie.get("spoken_languages", [])])
-    st.write(f"Langues parlées : {spoken_languages if spoken_languages else 'Non disponible'}")
+        # IMDb ID
+        imdb_id = movie.get("imdb_id", "Non disponible")
+        st.write(f"**IMDb :** [Lien IMDb](https://www.imdb.com/title/{imdb_id})" if imdb_id != "Non disponible" else "IMDb : Non disponible")
 
-    # Compagnies de production (ajustement)
-    production_company_ids = movie.get("production_companies", [])
-    production_company_names = []
-    for company_id in production_company_ids:
-        company = production_companies.find_one({"id": company_id})
-        if company:
-            production_company_names.append(company.get("name", "Inconnu"))
-    st.write(f"Compagnies de production : {', '.join(production_company_names) if production_company_names else 'Non disponible'}")
+        # Pays d'origine
+        origin_country = ", ".join(movie.get("origin_country", ["Non disponible"]))
+        st.write(f"**Pays d'origine :** {origin_country}")
 
-    # Pays de production
-    production_countries = ", ".join([country.get("name", "Inconnu") for country in movie.get("production_countries", [])])
-    st.write(f"Pays de production : {production_countries if production_countries else 'Non disponible'}")
+        # Langues parlées
+        spoken_languages = ", ".join([lang.get("name", "Inconnu") for lang in movie.get("spoken_languages", [])])
+        st.write(f"**Langues parlées :** {spoken_languages if spoken_languages else 'Non disponible'}")
+
+        # Compagnies de production (ajustement)
+        production_company_ids = movie.get("production_companies", [])
+        production_company_names = []
+        for company_id in production_company_ids:
+            company = production_companies.find_one({"id": company_id})
+            if company:
+                production_company_names.append(company.get("name", "Inconnu"))
+        st.write(f"**Compagnies de production :** {', '.join(production_company_names) if production_company_names else 'Non disponible'}")
+
+        # Pays de production
+        production_countries = ", ".join([country.get("name", "Inconnu") for country in movie.get("production_countries", [])])
+        st.write(f"**Pays de production :** {production_countries if production_countries else 'Non disponible'}")
 
     if st.button("⬅ Retour à la liste"):
         st.session_state.selected_movie = None  # Réinitialiser la sélection du film

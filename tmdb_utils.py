@@ -223,7 +223,8 @@ def display_movies():
             # Bouton "Voir les détails"
             if st.button(f"Voir les détails", key=f"details_{movie.get('id')}"):
                 st.session_state.selected_movie = movie.get("id")
-                st.switch_page("pages/movie_details.py")
+                st.rerun()  # Recharge la page pour afficher les détails
+
 
     # Affichage de la pagination
     st.write(f"Page {current_page} sur {total_pages}")

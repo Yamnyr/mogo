@@ -19,6 +19,11 @@ def get_genres():
     genres_list = [genre["name"] for genre in genres_cursor]
     return genres_list
 
+def get_genre_name_by_id(genre_id):
+    """Récupère le nom d'un genre par son ID."""
+    genre = genres_collection.find_one({"id": genre_id}, {"name": 1})
+    return genre["name"] if genre else None
+
 def get_production_companies():
     """Récupère la liste des compagnies de production dans la base de données."""
     production_companies_cursor = production_companies_collection.find({}, {"_id": 0, "name": 1, "id": 1})
@@ -55,31 +60,7 @@ def add_movie(title, release_date, genres, overview, vote_average, popularity,
         return f"✅ Film '{title}' ajouté avec succès, ID TMDb : {tmdb_id}"
     except Exception as e:
         return f"❌ Erreur lors de l'ajout du film : {str(e)}"
-
-
-# def modify_movie(movie_id, title=None, release_date=None, genres=None, vote_average=None, popularity=None):
-#     """Modifie un film existant dans la base de données."""
-#     updated_fields = {}
     
-#     if title:
-#         updated_fields["title"] = title
-#     if release_date:
-#         updated_fields["release_date"] = release_date
-#     if genres:
-#         updated_fields["genres"] = genres
-#     if vote_average:
-#         updated_fields["vote_average"] = vote_average
-#     if popularity:
-#         updated_fields["popularity"] = popularity
-    
-#     if updated_fields:
-#         result = movies_collection.update_one({"_id": movie_id}, {"$set": updated_fields})
-#         if result.matched_count:
-#             return f"✅ Film modifié avec succès (ID : {movie_id})"
-#         else:
-#             return "❌ Aucun film trouvé avec cet ID."
-#     return "❌ Aucune modification apportée."
-
 def delete_movie(movie_id):
     """Supprime un film de la base de données."""
     result = movies_collection.delete_one({"id": movie_id})
@@ -87,3 +68,58 @@ def delete_movie(movie_id):
         return f"✅ Film supprimé avec succès (ID : {movie_id})"
     else:
         return "❌ Aucun film trouvé avec cet ID."
+    
+def get_movie(movie_id):
+    """Récupère les informations d'un film par son ID et enrichit les genres avec leurs noms."""
+    movie = movies_collection.find_one({"id": movie_id}, {"_id": 0})
+    if movie:
+        # Convertir les genres en format nom
+        genre_names = []
+        for genre in movie.get('genres', []):
+            genre_name = get_genre_name_by_id(genre.get('id'))
+            if genre_name:
+                genre_names.append(genre_name)
+        movie['genres'] = genre_names
+    return movie
+
+def update_movie(movie_id, title, release_date, genres, overview, vote_average, popularity, 
+                 budget, revenue, runtime, production_companies, spoken_languages, poster_path, imdb_id):
+    """Met à jour les informations d'un film dans la base de données en ajoutant les genres sous format {id, name} et les langues parlées sous format {english_name}."""
+    
+    # Convertir les noms de genres en format {id, name}
+    genres_data = []
+    for genre_name in genres:
+        genre = genres_collection.find_one({"name": genre_name}, {"_id": 0, "id": 1, "name": 1})
+        if genre:
+            genres_data.append(genre)
+    
+    # Convertir les langues parlées en format {english_name}
+    spoken_languages_data = [{"english_name": lang} for lang in spoken_languages]
+
+    update_data = {
+        "title": title,
+        "release_date": release_date,
+        "genres": genres_data,  # Utiliser le format {id, name}
+        "overview": overview,
+        "vote_average": vote_average,
+        "popularity": popularity,
+        "budget": budget,
+        "revenue": revenue,
+        "runtime": runtime,
+        "production_companies": production_companies,
+        "spoken_languages": spoken_languages_data,  # Utiliser le format {english_name}
+        "poster_path": poster_path,
+        "imdb_id": imdb_id
+    }
+
+    try:
+        result = movies_collection.update_one(
+            {"id": movie_id},
+            {"$set": update_data}
+        )
+        if result.modified_count:
+            return f"✅ Film '{title}' modifié avec succès!"
+        else:
+            return "❌ Aucun film trouvé avec cet ID ou aucune modification effectuée."
+    except Exception as e:
+        return f"❌ Erreur lors de la modification du film : {str(e)}"

@@ -143,8 +143,11 @@ def display_movies():
             ].index(st.session_state.sort_option)  # Utilise la valeur stockée
         )
 
-    # Sauvegarde la nouvelle valeur sélectionnée
-    st.session_state.sort_option = sort_option
+        # Détecter un changement et forcer le rafraîchissement
+        if sort_option != st.session_state.sort_option:
+            st.session_state.sort_option = sort_option
+            st.rerun()  # Recharge la page immédiatement
+
 
 
     # Récupérer les genres depuis la collection MongoDB
@@ -177,9 +180,13 @@ def display_movies():
 
     # Appliquer le tri en fonction de la sélection
     if sort_option == "Date croissante":
+        movies = [m for m in movies if m.get("release_date")]  # Filtrer les films sans date
         movies.sort(key=lambda x: datetime.strptime(x["release_date"], "%Y-%m-%d"))
+
     elif sort_option == "Date décroissante":
+        movies = [m for m in movies if m.get("release_date")]
         movies.sort(key=lambda x: datetime.strptime(x["release_date"], "%Y-%m-%d"), reverse=True)
+
     elif sort_option == "Popularité croissante":
         movies.sort(key=lambda x: x["popularity"])
     elif sort_option == "Popularité décroissante":

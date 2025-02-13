@@ -14,7 +14,7 @@ st.title("🎬 Détails du Film")
 # Vérifier si un film a été sélectionné
 if "selected_movie" not in st.session_state or st.session_state.selected_movie is None:
     st.warning("Aucun film sélectionné. Retour à la liste des films.")
-    st.experimental_rerun()  # Recharge la page actuelle pour retourner à la liste des films
+    st.rerun()  # Recharge la page actuelle pour retourner à la liste des films
 
 # Récupérer l'ID du film sélectionné (s'assurer que c'est un entier)
 movie_id = int(st.session_state.selected_movie)  # Conversion explicite en entier

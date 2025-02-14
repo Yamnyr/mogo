@@ -11,6 +11,10 @@ def show_movie_details():
     production_companies = db["production_companies"]
 
     st.title("🎬 Détails du Film")
+    # ✅ Bouton retour avec suppression de `selected_movie`
+    if st.button("⬅ Retour à la liste"):
+        del st.session_state.selected_movie  # Supprime la variable pour revenir à la liste
+        st.rerun()  # Recharge l'application
 
     # Vérifier si un film a été sélectionné
     if "selected_movie" not in st.session_state or st.session_state.selected_movie is None:
@@ -82,9 +86,3 @@ def show_movie_details():
 
             production_countries = ", ".join([country.get("name", "Inconnu") for country in movie.get("production_countries", [])])
             st.write(f"**Pays de production :** {production_countries if production_countries else 'Non disponible'}")
-
-    # ✅ Bouton retour avec suppression de `selected_movie`
-    if st.button("⬅ Retour à la liste"):
-        del st.session_state.selected_movie  # Supprime la variable pour revenir à la liste
-        st.rerun()  # Recharge l'application
-

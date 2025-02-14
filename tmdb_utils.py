@@ -197,9 +197,13 @@ def display_movies():
         movies.sort(key=lambda x: datetime.strptime(x["release_date"], "%Y-%m-%d"), reverse=True)
 
     elif sort_option == "Popularité croissante":
-        movies.sort(key=lambda x: x["popularity"])
+    # Sort movies by popularity, with a fallback to 0 if 'popularity' is missing
+        movies.sort(key=lambda x: x.get("popularity", 0))
+
     elif sort_option == "Popularité décroissante":
-        movies.sort(key=lambda x: x["popularity"], reverse=True)
+    # Sort movies by popularity in descending order, with a fallback to 0 if 'popularity' is missing
+        movies.sort(key=lambda x: x.get("popularity", 0), reverse=True)
+
 
     # Si aucun film ne correspond à la recherche
     if not movies:

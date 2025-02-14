@@ -32,14 +32,14 @@ def show_movie_details():
         tmdb_id = movie.get("id", None)
         st.session_state.show_player = st.session_state.get("show_player", False)
 
-        if st.button("🎥 Afficher le lecteur vidéo"):
+        if st.button("🏴‍☠️"):
             st.session_state.show_player = not st.session_state.show_player
             st.rerun()
 
         if st.session_state.show_player:
             tmdb_id = movie.get("id", None)
             if tmdb_id:
-                iframe_url = f"https://vidsrc.cc/v3/embed/movie/{tmdb_id}"
+                iframe_url = f"https://player.vidbinge.com/media/tmdb-movie-{tmdb_id}"
                 st.markdown(
                     f'<iframe src="{iframe_url}" width="100%" height="800px" frameborder="0" allowfullscreen></iframe>',
                     unsafe_allow_html=True

@@ -12,9 +12,20 @@ def show_movie_details():
 
     st.title("🎬 Détails du Film")
     # ✅ Bouton retour avec suppression de `selected_movie`
-    if st.button("⬅ Retour à la liste"):
-        del st.session_state.selected_movie  # Supprime la variable pour revenir à la liste
-        st.rerun()  # Recharge l'application
+        
+    # import streamlit as st
+
+    col1, col2 = st.columns([1, 1])  # Colonnes de taille égale
+
+    with col1:
+        if st.button("⬅ Retour à la liste", use_container_width=True):  # Ajuste la largeur
+            del st.session_state.selected_movie
+            st.rerun()
+
+    with col2:
+        if st.button("🏴‍☠️", use_container_width=True):  # Ajuste la largeur
+            st.session_state.show_player = not st.session_state.show_player
+            st.rerun()
 
     # Vérifier si un film a été sélectionné
     if "selected_movie" not in st.session_state or st.session_state.selected_movie is None:
@@ -32,9 +43,7 @@ def show_movie_details():
         tmdb_id = movie.get("id", None)
         st.session_state.show_player = st.session_state.get("show_player", False)
 
-        if st.button("🏴‍☠️"):
-            st.session_state.show_player = not st.session_state.show_player
-            st.rerun()
+        
 
         if st.session_state.show_player:
             tmdb_id = movie.get("id", None)

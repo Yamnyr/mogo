@@ -63,6 +63,7 @@ def show_movie_details():
 
         with col2:
             st.subheader(movie.get("title", "Titre inconnu"))
+            st.write(f"**Id :** {movie.get('id')}")
             st.write(f"**Date de sortie :** {movie.get('release_date', 'Non disponible')}")
             st.write(f"**Note :** {movie.get('vote_average', 'N/A')} ({movie.get('vote_count', 0)} votes)")
 

@@ -154,12 +154,21 @@ def display_movies():
     genres_list = list(genres_collection.find({}, {"_id": 0, "id": 1, "name": 1}))
     genre_options = {genre["name"]: genre["id"] for genre in genres_list}
 
-    # 🎭 Ajout du filtre multi-sélection pour les genres
+    # Vérifier si la clé existe dans la session
+    if "selected_genres" not in st.session_state:
+        st.session_state.selected_genres = []
+
     selected_genres = st.multiselect(
         "🎭 Filtrer par genre :",
         options=list(genre_options.keys()),
-        default=st.session_state.get('selected_genres', [])  # Garder les genres sélectionnés
+        default=st.session_state.selected_genres
     )
+
+    # Si la sélection change, mettre à jour la session et relancer l'affichage
+    if set(selected_genres) != set(st.session_state.selected_genres):
+        st.session_state.selected_genres = selected_genres
+        st.rerun()
+
 
     # Sauvegarder les filtres dans la session
     st.session_state.search_query = search_query
